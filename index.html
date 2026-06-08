@@ -230,9 +230,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.7;
+    opacity: 0;
     transition: opacity 0.15s;
   }
+  .exercise-card.selected .card-img-edit,
+  .exercise-card.done .card-img-edit { opacity: 0.7; }
   .card-name {
     font-size: 12px;
     font-weight: 500;
@@ -242,15 +244,15 @@
   }
   .card-del {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 20px;
-    height: 20px;
-    background: rgba(0,0,0,0.4);
+    top: 3px;
+    right: 3px;
+    width: 26px;
+    height: 26px;
+    background: rgba(0,0,0,0.5);
     color: #fff;
     border: none;
     border-radius: 50%;
-    font-size: 12px;
+    font-size: 14px;
     cursor: pointer;
     z-index: 3;
     display: flex;
@@ -538,26 +540,6 @@
   .btn-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
   .btn-confirm { background: var(--accent); border: none; color: #fff; }
 
-  /* ===== FOOTER ===== */
-  .footer-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 6px;
-    margin-bottom: 24px;
-  }
-  .footer-actions button {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text2);
-    padding: 10px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-    box-shadow: var(--shadow);
-  }
-  .footer-actions button:active { color: var(--text); background: var(--surface2); }
 </style>
 </head>
 <body>
@@ -591,10 +573,6 @@
     <div class="section-label">今日已完成</div>
     <div class="today-log" id="today-log"></div>
 
-    <div class="footer-actions">
-      <button onclick="exportData()">导出备份</button>
-      <button onclick="importData()">导入恢复</button>
-    </div>
   </div>
 
   <div id="history-view" class="view">
@@ -1373,47 +1351,6 @@ document.getElementById('btn-dialog-confirm').addEventListener('click', () => {
 });
 
 // ==================== EXPORT / IMPORT ====================
-function exportData() {
-  const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'fitness-backup-' + todayStr() + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importData() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.addEventListener('change', () => {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const imported = JSON.parse(reader.result);
-        if (!imported.exercises || !imported.workouts) throw new Error('Invalid format');
-        if (confirm('导入将覆盖当前所有数据，确定继续？')) {
-          appData = imported;
-          saveData(appData);
-          selectedExercise = null;
-          activePickers = [];
-          document.getElementById('editor-panel').classList.remove('open');
-          renderAll();
-          alert('数据已导入');
-        }
-      } catch(e) { alert('文件格式不正确'); }
-    };
-    reader.readAsText(file);
-  });
-  input.click();
-}
-
-window.exportData = exportData;
-window.importData = importData;
-
 // ==================== INIT ====================
 renderAll();
 </script>
