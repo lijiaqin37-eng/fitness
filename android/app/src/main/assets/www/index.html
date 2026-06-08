@@ -230,9 +230,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.7;
+    opacity: 0;
     transition: opacity 0.15s;
   }
+  .exercise-card:active .card-img-edit,
+  .exercise-card.selected .card-img-edit,
+  .exercise-card.done .card-img-edit { opacity: 1; }
   .card-name {
     font-size: 12px;
     font-weight: 500;
@@ -405,6 +408,7 @@
     font-size: 13px;
     color: var(--text2);
     font-weight: 500;
+    writing-mode: vertical-lr;
     background: var(--surface2);
     border-radius: 0 8px 8px 0;
     min-width: 28px;
