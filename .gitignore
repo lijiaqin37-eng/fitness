@@ -1,0 +1,5 @@
+.playwright-mcp/
+*.zip
+*.md
+build-apk.sh
+android-project/

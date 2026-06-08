@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>健身记录</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f0f5f2;
+    --surface: #fff;
+    --surface2: #f5f8f6;
+    --border: #e0e8e3;
+    --text: #1a1f1c;
+    --text2: #889990;
+    --accent: #10b981;
+    --accent2: #059669;
+    --green: #10b981;
+    --green-bg: #ecfdf5;
+    --red: #ef4444;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    background: var(--surface);
+    padding: 14px 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 0 var(--border);
+  }
+  header h1 { font-size: 17px; font-weight: 700; color: var(--text); }
+
+  /* ===== TABS ===== */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    position: sticky;
+    top: 49px;
+    z-index: 10;
+    box-shadow: 0 1px 0 var(--border);
+  }
+  .tabs button {
+    flex: 1;
+    padding: 12px;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tabs button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ===== MAIN ===== */
+  main { padding: 16px; max-width: 500px; margin: 0 auto; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ===== DATE ===== */
+  .date-display {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text2);
+    margin-bottom: 18px;
+    padding: 8px 16px;
+    background: var(--surface);
+    border-radius: 20px;
+    display: inline-block;
+    box-shadow: var(--shadow);
+  }
+  .date-wrapper { text-align: center; }
+
+  /* ===== EXERCISE GROUPS ===== */
+  .section-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .group-section {
+    margin-bottom: 16px;
+  }
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .group-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .group-icon.chest { background: #fce4ec; }
+  .group-icon.back { background: #e3f2fd; }
+  .group-icon.legs { background: #f3e5f5; }
+  .group-icon.shoulders { background: #fff3e0; }
+  .group-icon.arms { background: #e8f5e9; }
+  .group-icon.custom { background: #f5f5f5; }
+  .group-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .group-count {
+    font-size: 11px;
+    color: var(--text2);
+    font-weight: 400;
+  }
+  .group-cards {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .group-cards::-webkit-scrollbar { display: none; }
+
+  .exercise-card {
+    flex-shrink: 0;
+    width: 110px;
+    background: var(--surface);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    scroll-snap-align: start;
+  }
+  .exercise-card:active { transform: scale(0.96); }
+  .exercise-card.selected {
+    border-color: var(--accent);
+    background: var(--green-bg);
+    box-shadow: var(--shadow-md);
+  }
+  .exercise-card.done {
+    border-color: var(--green);
+    background: var(--green-bg);
+  }
+
+  .card-img {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .card-img .placeholder {
+    font-size: 22px;
+    font-weight: 700;
+    color: #d0d8d3;
+    position: absolute;
+  }
+  .card-img .done-check {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--green);
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 11px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .exercise-card.done .done-check { display: flex; }
+  .card-img img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+  }
+  .card-img-edit {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    background: rgba(0,0,0,0.45);
+    border: none;
+    border-radius: 50%;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .exercise-card:active .card-img-edit,
+  .exercise-card.selected .card-img-edit,
+  .exercise-card.done .card-img-edit { opacity: 1; }
+  .card-name {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    padding: 0 2px 4px;
+    color: var(--text);
+  }
+  .card-del {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-add {
+    flex-shrink: 0;
+    width: 110px;
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 24px;
+    transition: all 0.15s;
+    scroll-snap-align: start;
+  }
+  .card-add:active { background: var(--surface2); }
+
+  /* ===== EDITOR PANEL ===== */
+  .editor-panel {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    display: none;
+    box-shadow: var(--shadow-md);
+  }
+  .editor-panel.open { display: block; }
+  .editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .editor-header h3 { font-size: 16px; font-weight: 700; }
+  .editor-header button {
+    background: none;
+    border: none;
+    color: var(--red);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* ===== PICKER ===== */
+  .set-row {
+    margin-bottom: 12px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    position: relative;
+  }
+  .set-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .set-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .set-del {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  .set-del:active { color: var(--red); }
+
+  .picker-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .picker-group {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .picker {
+    flex: 1;
+    position: relative;
+    height: 140px;
+    overflow: hidden;
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .picker-scroll {
+    height: 100%;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 48px 0;
+  }
+  .picker-scroll::-webkit-scrollbar { display: none; }
+  .picker-item {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    font-size: 15px;
+    color: #c0c8c3;
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    transition: color 0.1s;
+  }
+  .picker-item.active {
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .picker-mask {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: linear-gradient(180deg,
+      #fff 0%,
+      rgba(255,255,255,0) 30%,
+      rgba(255,255,255,0) 70%,
+      #fff 100%);
+  }
+  .picker-highlight {
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    right: 4px;
+    transform: translateY(-50%);
+    height: 44px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    pointer-events: none;
+    z-index: 1;
+    background: rgba(16,185,129,0.04);
+    border-radius: 4px;
+  }
+  .picker-unit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    font-size: 13px;
+    color: var(--text2);
+    font-weight: 500;
+    writing-mode: vertical-lr;
+    background: var(--surface2);
+    border-radius: 0 8px 8px 0;
+    min-width: 28px;
+  }
+
+  .btn-add-set {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text2);
+    width: 100%;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 14px;
+    transition: all 0.15s;
+  }
+  .btn-add-set:active { border-color: var(--accent); color: var(--accent); }
+
+  .btn-save {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    width: 100%;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.25);
+  }
+  .btn-save:active { background: var(--accent2); transform: scale(0.98); }
+
+  /* ===== TODAY LOG ===== */
+  .today-log { margin-bottom: 20px; }
+  .log-item {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: var(--shadow);
+    border-left: 3px solid var(--green);
+  }
+  .log-item:active { background: var(--green-bg); }
+  .log-item .log-name { font-weight: 600; font-size: 14px; }
+  .log-item .log-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .log-del {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    flex-shrink: 0;
+  }
+  .log-del:active { color: var(--red); }
+  .log-empty { text-align: center; color: var(--text2); padding: 28px 0; font-size: 14px; }
+
+  /* ===== HISTORY ===== */
+  .history-controls { margin-bottom: 16px; }
+  .history-controls select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23889990' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    box-shadow: var(--shadow);
+  }
+  .chart-container {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text2);
+  }
+  .chart-container canvas { max-height: 200px; }
+  .history-empty { text-align: center; color: var(--text2); padding: 40px 0; font-size: 14px; }
+
+  /* ===== DIALOG ===== */
+  dialog {
+    background: var(--surface);
+    color: var(--text);
+    border: none;
+    border-radius: var(--radius);
+    padding: 24px;
+    width: 90%;
+    max-width: 340px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  dialog::backdrop { background: rgba(0,0,0,0.4); }
+  dialog h3 { font-size: 15px; margin-bottom: 16px; font-weight: 600; }
+  dialog input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    margin-bottom: 16px;
+    outline: none;
+  }
+  dialog input:focus { border-color: var(--accent); }
+  dialog .dialog-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  dialog button {
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
+  .btn-confirm { background: var(--accent); border: none; color: #fff; }
+
+  /* ===== FOOTER ===== */
+  .footer-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    margin-bottom: 24px;
+  }
+  .footer-actions button {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: var(--shadow);
+  }
+  .footer-actions button:active { color: var(--text); background: var(--surface2); }
+</style>
+</head>
+<body>
+
+<header><h1>健身记录</h1></header>
+
+<nav class="tabs">
+  <button class="active" data-tab="training">训练</button>
+  <button data-tab="history">历史</button>
+</nav>
+
+<main>
+  <div id="training-view" class="view active">
+    <div class="date-wrapper">
+      <div class="date-display" id="date-display"></div>
+    </div>
+
+    <div class="section-label">选择动作</div>
+    <div id="exercise-grid"></div>
+
+    <div class="editor-panel" id="editor-panel">
+      <div class="editor-header">
+        <h3 id="editor-title"></h3>
+        <button id="btn-delete-workout" style="display:none">删除此记录</button>
+      </div>
+      <div id="sets-container"></div>
+      <button class="btn-add-set" id="btn-add-set">+ 添加一组</button>
+      <button class="btn-save" id="btn-save">保存</button>
+    </div>
+
+    <div class="section-label">今日已完成</div>
+    <div class="today-log" id="today-log"></div>
+
+    <div class="footer-actions">
+      <button onclick="exportData()">导出备份</button>
+      <button onclick="importData()">导入恢复</button>
+    </div>
+  </div>
+
+  <div id="history-view" class="view">
+    <div class="history-controls">
+      <select id="history-exercise-select"></select>
+    </div>
+    <div id="history-charts"></div>
+    <div class="section-label">历史记录</div>
+    <div id="history-list"></div>
+  </div>
+</main>
+
+<dialog id="dialog-add-exercise" data-group="custom">
+  <h3>添加自定义动作</h3>
+  <input type="text" id="new-exercise-name" placeholder="动作名称" maxlength="20">
+  <div class="dialog-btns">
+    <button class="btn-cancel" id="btn-dialog-cancel">取消</button>
+    <button class="btn-confirm" id="btn-dialog-confirm">添加</button>
+  </div>
+</dialog>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+// ==================== DATA LAYER ====================
+const STORAGE = 'fitness_data_v2';
+
+const GROUPS = [
+  { id: 'chest',     name: '胸',   icon: '🏋' },
+  { id: 'back',      name: '背',   icon: '🔙' },
+  { id: 'legs',      name: '腿',   icon: '🦵' },
+  { id: 'shoulders', name: '肩',   icon: '💪' },
+  { id: 'arms',      name: '手臂', icon: '🤳' },
+];
+
+const GROUP_ICON_CLASS = {
+  chest: 'chest', back: 'back', legs: 'legs',
+  shoulders: 'shoulders', arms: 'arms', custom: 'custom'
+};
+
+const DEFAULT_EXERCISES = [
+  { id: 'bench-press',      name: '平板卧推',   group: 'chest',     custom: false },
+  { id: 'incline-bench',    name: '上斜卧推',   group: 'chest',     custom: false },
+  { id: 'pull-up',          name: '引体向上',   group: 'back',      custom: false },
+  { id: 'barbell-row',      name: '杠铃划船',   group: 'back',      custom: false },
+  { id: 'squat',            name: '深蹲',       group: 'legs',      custom: false },
+  { id: 'deadlift',         name: '硬拉',       group: 'legs',      custom: false },
+  { id: 'ohp',              name: '推举',       group: 'shoulders', custom: false },
+  { id: 'lateral-raise',    name: '侧平举',     group: 'shoulders', custom: false },
+  { id: 'dumbbell-curl',    name: '哑铃弯举',   group: 'arms',      custom: false },
+];
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE);
+    if (raw) {
+      const d = JSON.parse(raw);
+      // Migrate: ensure all exercises have group field
+      const defaultMap = {};
+      DEFAULT_EXERCISES.forEach(de => { defaultMap[de.id] = de.group; });
+      for (const ex of d.exercises) {
+        if (!ex.group) ex.group = defaultMap[ex.id] || 'custom';
+      }
+      // Merge default exercises
+      const existingIds = new Set(d.exercises.map(e => e.id));
+      for (const de of DEFAULT_EXERCISES) {
+        if (!existingIds.has(de.id)) d.exercises.push({...de});
+      }
+      return d;
+    }
+  } catch(e) {}
+  return { exercises: [...DEFAULT_EXERCISES], workouts: [] };
+}
+
+function saveData(data) { localStorage.setItem(STORAGE, JSON.stringify(data)); }
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function formatDateCN(dateStr) {
+  const [y, m, d] = dateStr.split('-');
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const date = new Date(+y, +m - 1, +d);
+  return `${+m}月${+d}日 ${weekdays[date.getDay()]}`;
+}
+
+function getWorkout(date, exerciseId, data) {
+  return data.workouts.find(w => w.date === date && w.exerciseId === exerciseId);
+}
+
+function upsertWorkout(date, exerciseId, sets, data) {
+  const idx = data.workouts.findIndex(w => w.date === date && w.exerciseId === exerciseId);
+  if (idx >= 0) { data.workouts[idx].sets = sets; }
+  else { data.workouts.push({ date, exerciseId, sets }); }
+}
+
+function deleteWorkout(date, exerciseId, data) {
+  data.workouts = data.workouts.filter(w => !(w.date === date && w.exerciseId === exerciseId));
+}
+
+function getHistory(exerciseId, data) {
+  return data.workouts
+    .filter(w => w.exerciseId === exerciseId)
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function calcMaxWeight(sets) { return Math.max(...sets.map(s => s.w)); }
+function calcVolume(sets) { return sets.reduce((sum, s) => sum + s.w * s.r, 0); }
+function calcE1RM(sets) { return Math.max(...sets.map(s => s.w * (1 + s.r / 30))).toFixed(1); }
+
+// ==================== STATE ====================
+let appData = loadData();
+let currentDate = todayStr();
+let selectedExercise = null;
+let activePickers = []; // [{ weight: picker, reps: picker }]
+let chartInstances = {};
+
+// ==================== PICKER COMPONENT ====================
+function createPicker(container, config) {
+  const { min, max, step, value, unit } = config;
+  const initialVal = value || min;
+
+  // Build DOM
+  container.innerHTML = `
+    <div class="picker">
+      <div class="picker-mask"></div>
+      <div class="picker-highlight"></div>
+      <div class="picker-scroll"></div>
+    </div>
+    <div class="picker-unit">${unit}</div>`;
+
+  const scrollEl = container.querySelector('.picker-scroll');
+  const pickerEl = container.querySelector('.picker');
+
+  // Generate items
+  const items = [];
+  for (let v = min; v <= max; v = +(v + step).toFixed(5)) {
+    const el = document.createElement('div');
+    el.className = 'picker-item';
+    el.textContent = Number.isInteger(v) ? v : v.toFixed(1);
+    el.dataset.value = v;
+    scrollEl.appendChild(el);
+    items.push(el);
+  }
+
+  let currentVal = initialVal;
+  let scrollTimer = null;
+
+  function scrollToValue(v) {
+    const idx = Math.round((v - min) / step);
+    const target = items[Math.max(0, Math.min(idx, items.length - 1))];
+    if (target) {
+      const offset = target.offsetTop - scrollEl.clientHeight / 2 + target.offsetHeight / 2;
+      scrollEl.scrollTo({ top: offset, behavior: 'instant' });
+    }
+  }
+
+  function updateActive() {
+    const centerY = scrollEl.scrollTop + scrollEl.clientHeight / 2;
+    let closest = items[0];
+    let minDist = Infinity;
+    items.forEach(item => {
+      const itemCenter = item.offsetTop + item.offsetHeight / 2;
+      const dist = Math.abs(centerY - itemCenter);
+      if (dist < minDist) { minDist = dist; closest = item; }
+    });
+    items.forEach(i => i.classList.remove('active'));
+    if (closest) {
+      closest.classList.add('active');
+      currentVal = parseFloat(closest.dataset.value);
+    }
+  }
+
+  scrollEl.addEventListener('scroll', () => {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateActive, 60);
+    updateActive();
+  }, { passive: true });
+
+  // Init
+  setTimeout(() => scrollToValue(initialVal), 50);
+  setTimeout(updateActive, 150);
+
+  return {
+    getValue: () => currentVal,
+    setValue: (v) => { scrollToValue(v); currentVal = v; setTimeout(updateActive, 100); },
+    el: container
+  };
+}
+
+// ==================== RENDER: EXERCISE CARDS ====================
+function getExerciseName(id) {
+  const ex = appData.exercises.find(e => e.id === id);
+  return ex ? ex.name : id;
+}
+
+function getGroupName(groupId) {
+  const g = GROUPS.find(g => g.id === groupId);
+  return g ? g.name : '自定义';
+}
+
+function getGroupIcon(groupId) {
+  const g = GROUPS.find(g => g.id === groupId);
+  return g ? g.icon : '📌';
+}
+
+function renderExerciseCards() {
+  const grid = document.getElementById('exercise-grid');
+  const todayWorkouts = appData.workouts.filter(w => w.date === currentDate);
+  const doneIds = new Set(todayWorkouts.map(w => w.exerciseId));
+
+  // Group exercises
+  const grouped = {};
+  // Initialize all known groups (preserve order)
+  GROUPS.forEach(g => { grouped[g.id] = []; });
+  grouped['custom'] = [];
+
+  for (const ex of appData.exercises) {
+    const g = ex.group || 'custom';
+    if (!grouped[g]) grouped[g] = [];
+    grouped[g].push(ex);
+  }
+
+  // Render helper
+  function cardHTML(ex) {
+    const isDone = doneIds.has(ex.id);
+    const isSelected = selectedExercise === ex.id;
+    const cls = [
+      'exercise-card',
+      isSelected ? 'selected' : '',
+      isDone ? 'done' : '',
+      ex.custom ? 'custom' : ''
+    ].filter(Boolean).join(' ');
+
+    const imgSrc = ex.imageData || `images/${ex.id}.png`;
+
+    return `
+      <div class="${cls}" data-exercise="${ex.id}">
+        <div class="card-img">
+          <span class="placeholder">${ex.name.charAt(0)}</span>
+          <img src="${imgSrc}"
+               onerror="this.style.display='none'"
+               onload="this.previousElementSibling.style.display='none'"
+               loading="lazy">
+          <span class="done-check">✓</span>
+          <button class="card-img-edit" data-edit-img="${ex.id}">📷</button>
+        </div>
+        <div class="card-name">${ex.name}</div>
+        ${ex.custom ? `<button class="card-del" data-del="${ex.id}">&times;</button>` : ''}
+      </div>`;
+  }
+
+  let html = '';
+
+  // Render each group
+  for (const [groupId, exercises] of Object.entries(grouped)) {
+    if (exercises.length === 0 && groupId !== 'custom') continue;
+
+    const icon = getGroupIcon(groupId);
+    const name = getGroupName(groupId);
+    const iconCls = GROUP_ICON_CLASS[groupId] || 'custom';
+
+    html += `<div class="group-section">
+      <div class="group-header">
+        <div class="group-icon ${iconCls}">${icon}</div>
+        <span class="group-name">${name}</span>
+        <span class="group-count">${exercises.length}个动作</span>
+      </div>
+      <div class="group-cards" data-group="${groupId}">`;
+
+    for (const ex of exercises) {
+      html += cardHTML(ex);
+    }
+
+    // Add button for this group
+    html += `<div class="card-add" data-add-group="${groupId}">+</div>`;
+
+    html += `</div></div>`;
+  }
+
+  grid.innerHTML = html;
+
+  // Event: select exercise
+  grid.querySelectorAll('.exercise-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.card-del') || e.target.closest('.card-img-edit')) return;
+      selectExercise(card.dataset.exercise);
+    });
+  });
+
+  // Event: delete custom exercise
+  grid.querySelectorAll('.card-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteCustomExercise(btn.dataset.del);
+    });
+  });
+
+  // Event: change exercise image
+  grid.querySelectorAll('.card-img-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      openImagePicker(btn.dataset.editImg);
+    });
+  });
+
+  // Event: add exercise to specific group
+  grid.querySelectorAll('.card-add').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const groupId = btn.dataset.addGroup;
+      document.getElementById('dialog-add-exercise').dataset.group = groupId;
+      document.getElementById('dialog-add-exercise').showModal();
+      document.getElementById('new-exercise-name').value = '';
+      setTimeout(() => document.getElementById('new-exercise-name').focus(), 100);
+    });
+  });
+}
+
+// ==================== IMAGE PICKER ====================
+function openImagePicker(exerciseId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await resizeImage(file, 400);
+      const ex = appData.exercises.find(e => e.id === exerciseId);
+      if (ex) {
+        ex.imageData = dataUrl;
+        saveData(appData);
+        renderExerciseCards();
+      }
+    } catch(e) {
+      alert('图片处理失败，请重试');
+    }
+  });
+  input.click();
+}
+
+function resizeImage(file, maxWidth) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => reject(new Error('Image load failed'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ==================== RENDER: EDITOR ====================
+function renderEditor() {
+  const panel = document.getElementById('editor-panel');
+  const title = document.getElementById('editor-title');
+  const setsContainer = document.getElementById('sets-container');
+  const btnDelete = document.getElementById('btn-delete-workout');
+
+  if (!selectedExercise) {
+    panel.classList.remove('open');
+    return;
+  }
+
+  panel.classList.add('open');
+  title.textContent = getExerciseName(selectedExercise);
+
+  const workout = getWorkout(currentDate, selectedExercise, appData);
+  const sets = workout ? [...workout.sets] : [{ w: 60, r: 8 }];
+
+  btnDelete.style.display = workout ? 'inline-block' : 'none';
+
+  renderSets(sets);
+}
+
+function renderSets(sets) {
+  const container = document.getElementById('sets-container');
+  activePickers = [];
+
+  let html = '';
+  sets.forEach((s, i) => {
+    html += `
+      <div class="set-row" data-index="${i}">
+        <div class="set-row-header">
+          <span class="set-label">组 ${i + 1}</span>
+          <button class="set-del" data-del="${i}">&times;</button>
+        </div>
+        <div class="picker-row">
+          <div class="picker-group" data-picker="weight-${i}"></div>
+          <div class="picker-group" data-picker="reps-${i}"></div>
+        </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+
+  // Initialize pickers for each set
+  container.querySelectorAll('.set-row').forEach((row, i) => {
+    const s = sets[i] || { w: 0, r: 0 };
+
+    const weightContainer = row.querySelector('[data-picker="weight-' + i + '"]');
+    const weightPicker = createPicker(weightContainer, {
+      min: 0, max: 200, step: 0.5, value: s.w || 0, unit: 'kg'
+    });
+
+    const repsContainer = row.querySelector('[data-picker="reps-' + i + '"]');
+    const repsPicker = createPicker(repsContainer, {
+      min: 0, max: 30, step: 1, value: s.r || 0, unit: '次'
+    });
+
+    activePickers.push({ weight: weightPicker, reps: repsPicker });
+  });
+
+  // Delete set buttons
+  container.querySelectorAll('.set-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = parseInt(btn.dataset.del);
+      if (activePickers.length <= 1) return;
+      const sets = getCurrentSets();
+      sets.splice(index, 1);
+      renderSets(sets);
+    });
+  });
+}
+
+function getCurrentSets() {
+  return activePickers.map(p => ({
+    w: p.weight.getValue(),
+    r: p.reps.getValue()
+  }));
+}
+
+function formatSets(sets) {
+  return sets.map(s => s.w + '×' + s.r).join('  ');
+}
+
+// ==================== RENDER: TODAY LOG ====================
+function renderTodayLog() {
+  const container = document.getElementById('today-log');
+  const todayWorkouts = appData.workouts.filter(w => w.date === currentDate);
+
+  if (todayWorkouts.length === 0) {
+    container.innerHTML = '<div class="log-empty">今天还没有记录，选择动作开始训练吧</div>';
+    return;
+  }
+
+  let html = '';
+  todayWorkouts.forEach(w => {
+    const name = getExerciseName(w.exerciseId);
+    html += `
+      <div class="log-item" data-exercise="${w.exerciseId}">
+        <div>
+          <div class="log-name">${name}</div>
+          <div class="log-detail">${formatSets(w.sets)}</div>
+        </div>
+        <button class="log-del" data-del="${w.exerciseId}">&times;</button>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.log-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.log-del')) return;
+      selectExercise(item.dataset.exercise);
+      document.getElementById('editor-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  container.querySelectorAll('.log-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const exId = btn.dataset.del;
+      deleteWorkout(currentDate, exId, appData);
+      saveData(appData);
+      if (selectedExercise === exId) {
+        selectedExercise = null;
+        document.getElementById('editor-panel').classList.remove('open');
+      }
+      renderAll();
+    });
+  });
+}
+
+// ==================== RENDER: HISTORY ====================
+function renderHistoryView() {
+  const select = document.getElementById('history-exercise-select');
+  const exerciseIds = [...new Set(appData.workouts.map(w => w.exerciseId))];
+
+  if (exerciseIds.length === 0) {
+    select.innerHTML = '<option value="">-- 暂无训练记录 --</option>';
+    document.getElementById('history-charts').innerHTML = '<div class="history-empty">还没有任何训练记录</div>';
+    document.getElementById('history-list').innerHTML = '';
+    return;
+  }
+
+  let html = '<option value="">-- 选择动作 --</option>';
+  exerciseIds.forEach(id => {
+    html += `<option value="${id}">${getExerciseName(id)}</option>`;
+  });
+  select.innerHTML = html;
+
+  const currentVal = select.value;
+  if (!currentVal || !exerciseIds.includes(currentVal)) {
+    select.value = exerciseIds[0];
+  }
+
+  renderHistoryCharts(select.value || exerciseIds[0]);
+}
+
+function renderHistoryCharts(exerciseId) {
+  const chartsDiv = document.getElementById('history-charts');
+  const listDiv = document.getElementById('history-list');
+
+  if (!exerciseId) {
+    chartsDiv.innerHTML = '';
+    listDiv.innerHTML = '';
+    return;
+  }
+
+  const history = getHistory(exerciseId, appData);
+
+  if (history.length === 0) {
+    chartsDiv.innerHTML = '<div class="history-empty">该动作暂无记录</div>';
+    listDiv.innerHTML = '';
+    return;
+  }
+
+  Object.values(chartInstances).forEach(c => c.destroy());
+  chartInstances = {};
+
+  const dates = history.map(h => h.date.slice(5));
+  const e1RMs = history.map(h => calcE1RM(h.sets));
+  const maxWeights = history.map(h => calcMaxWeight(h.sets));
+  const volumes = history.map(h => calcVolume(h.sets));
+
+  const chartFont = { size: 10 };
+
+  chartsDiv.innerHTML = `
+    <div class="chart-container">
+      <div class="chart-title">最大重量趋势 (kg)</div>
+      <canvas id="chart-max-weight"></canvas>
+    </div>
+    <div class="chart-container">
+      <div class="chart-title">e1RM 趋势 (kg) · 估测一次最大重量</div>
+      <canvas id="chart-e1rm"></canvas>
+    </div>
+    <div class="chart-container">
+      <div class="chart-title">训练容量趋势 (kg × 次)</div>
+      <canvas id="chart-volume"></canvas>
+    </div>`;
+
+  const chartOpts = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#889990', font: chartFont }, grid: { color: '#e8edeb' } },
+      y: { ticks: { color: '#889990', font: chartFont }, grid: { color: '#e8edeb' }, beginAtZero: false }
+    }
+  };
+
+  chartInstances.e1rm = new Chart(document.getElementById('chart-e1rm'), {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        data: e1RMs,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16,185,129,0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: '#10b981'
+      }]
+    },
+    options: chartOpts
+  });
+
+  chartInstances.maxWeight = new Chart(document.getElementById('chart-max-weight'), {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        data: maxWeights,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.06)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: '#6366f1'
+      }]
+    },
+    options: chartOpts
+  });
+
+  chartInstances.volume = new Chart(document.getElementById('chart-volume'), {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [{
+        data: volumes,
+        backgroundColor: '#10b981',
+        borderRadius: 4
+      }]
+    },
+    options: { ...chartOpts, scales: { ...chartOpts.scales, y: { ...chartOpts.scales.y, beginAtZero: true } } }
+  });
+
+  let listHtml = '';
+  history.slice().reverse().forEach(h => {
+    const e1rm = calcE1RM(h.sets);
+    const vol = calcVolume(h.sets);
+    listHtml += `
+      <div class="log-item" style="border-left-color: var(--accent); cursor: default;">
+        <div>
+          <div class="log-name">${formatDateCN(h.date)}</div>
+          <div class="log-detail">${formatSets(h.sets)} &nbsp;|&nbsp; e1RM: ${e1rm}kg &nbsp;|&nbsp; 容量: ${vol}</div>
+        </div>
+        <button class="log-del" data-del-date="${h.date}" data-del-ex="${h.exerciseId}">&times;</button>
+      </div>`;
+  });
+  listDiv.innerHTML = listHtml;
+
+  listDiv.querySelectorAll('.log-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (confirm('删除这条记录？')) {
+        deleteWorkout(btn.dataset.delDate, btn.dataset.delEx, appData);
+        saveData(appData);
+        renderHistoryCharts(exerciseId);
+        if (currentDate === btn.dataset.delDate) renderAll();
+      }
+    });
+  });
+}
+
+// ==================== ACTIONS ====================
+function selectExercise(exerciseId) {
+  if (selectedExercise === exerciseId) {
+    selectedExercise = null;
+    document.getElementById('editor-panel').classList.remove('open');
+    activePickers = [];
+  } else {
+    selectedExercise = exerciseId;
+    renderEditor();
+  }
+  renderExerciseCards();
+}
+
+function deleteCustomExercise(exerciseId) {
+  if (!confirm('删除"' + getExerciseName(exerciseId) + '"？相关记录也会被删除。')) return;
+  appData.exercises = appData.exercises.filter(e => e.id !== exerciseId);
+  appData.workouts = appData.workouts.filter(w => w.exerciseId !== exerciseId);
+  if (selectedExercise === exerciseId) {
+    selectedExercise = null;
+    document.getElementById('editor-panel').classList.remove('open');
+    activePickers = [];
+  }
+  saveData(appData);
+  renderAll();
+}
+
+function addCustomExercise(name, group) {
+  if (!name.trim()) return;
+  const id = 'custom-' + Date.now();
+  appData.exercises.push({ id, name: name.trim(), group: group || 'custom', custom: true });
+  saveData(appData);
+  renderAll();
+}
+
+function saveWorkout() {
+  if (!selectedExercise) return;
+
+  const sets = getCurrentSets();
+  const validSets = sets.filter(s => s.w > 0 && s.r > 0);
+
+  if (validSets.length === 0) {
+    alert('请至少设置一组有效的重量和次数');
+    return;
+  }
+
+  upsertWorkout(currentDate, selectedExercise, validSets, appData);
+  saveData(appData);
+
+  selectedExercise = null;
+  activePickers = [];
+  document.getElementById('editor-panel').classList.remove('open');
+  renderAll();
+}
+
+function renderAll() {
+  renderExerciseCards();
+  document.getElementById('date-display').textContent = formatDateCN(currentDate);
+  if (document.getElementById('editor-panel').classList.contains('open') && !selectedExercise) {
+    document.getElementById('editor-panel').classList.remove('open');
+  }
+  renderEditor();
+  renderTodayLog();
+  if (document.getElementById('history-view').classList.contains('active')) {
+    renderHistoryView();
+  }
+}
+
+// ==================== EVENT LISTENERS ====================
+document.querySelectorAll('.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(tab + '-view').classList.add('active');
+
+    if (tab === 'history') renderHistoryView();
+  });
+});
+
+document.getElementById('btn-add-set').addEventListener('click', () => {
+  const sets = getCurrentSets();
+  sets.push({ w: sets.length > 0 ? sets[sets.length - 1].w : 60, r: 8 });
+  renderSets(sets);
+});
+
+document.getElementById('btn-save').addEventListener('click', saveWorkout);
+
+document.getElementById('btn-delete-workout').addEventListener('click', () => {
+  if (!selectedExercise) return;
+  if (confirm('删除"' + getExerciseName(selectedExercise) + '"今天的训练记录？')) {
+    deleteWorkout(currentDate, selectedExercise, appData);
+    saveData(appData);
+    selectedExercise = null;
+    activePickers = [];
+    document.getElementById('editor-panel').classList.remove('open');
+    renderAll();
+  }
+});
+
+document.getElementById('history-exercise-select').addEventListener('change', function() {
+  renderHistoryCharts(this.value);
+});
+
+// Add exercise dialog
+const addDialog = document.getElementById('dialog-add-exercise');
+
+document.getElementById('btn-dialog-cancel').addEventListener('click', () => {
+  addDialog.close();
+});
+document.getElementById('btn-dialog-confirm').addEventListener('click', () => {
+  const name = document.getElementById('new-exercise-name').value;
+  const group = addDialog.dataset.group || 'custom';
+  if (name.trim()) {
+    addCustomExercise(name.trim(), group);
+    addDialog.close();
+  }
+});
+
+// ==================== EXPORT / IMPORT ====================
+function exportData() {
+  const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'fitness-backup-' + todayStr() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = JSON.parse(reader.result);
+        if (!imported.exercises || !imported.workouts) throw new Error('Invalid format');
+        if (confirm('导入将覆盖当前所有数据，确定继续？')) {
+          appData = imported;
+          saveData(appData);
+          selectedExercise = null;
+          activePickers = [];
+          document.getElementById('editor-panel').classList.remove('open');
+          renderAll();
+          alert('数据已导入');
+        }
+      } catch(e) { alert('文件格式不正确'); }
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+}
+
+window.exportData = exportData;
+window.importData = importData;
+
+// ==================== INIT ====================
+renderAll();
+</script>
+
+</body>
+</html>
